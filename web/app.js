@@ -196,6 +196,7 @@ function renderStatus(status) {
   const webhookReady = Boolean(status.webhook_status);
 
   document.querySelector("#env").textContent = status.environment || "UNKNOWN";
+  document.querySelector("#sidebar-environment").textContent = status.environment || "UNKNOWN";
   document.querySelector("#statusEvent").textContent = status.last_event || "Never";
   document.querySelector("#lastEvent").textContent = status.last_event || "Never";
 
@@ -226,6 +227,10 @@ async function load() {
     );
     drawChart(dashboard.activity || []);
     renderStatus(results[2]);
+    const auditCount = (dashboard.events || []).length;
+    document.querySelector("#audit-summary").textContent = auditCount === 0
+      ? "No audit events recorded yet."
+      : auditCount.toLocaleString() + " recent audit event(s) loaded from the gateway runtime and persistent audit store.";
   } catch (error) {
     document.querySelector("#conn").textContent = "Gateway unavailable";
     document.querySelector("#connection-subtitle").textContent = error.message;
