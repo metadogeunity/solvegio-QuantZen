@@ -10,18 +10,18 @@ import (
 )
 
 type Event struct {
-	ID        string    \`json:"id"\`
-	Time      time.Time \`json:"time"\`
-	Method    string    \`json:"method,omitempty"\`
-	Type      string    \`json:"type"\`
-	Endpoint  string    \`json:"endpoint"\`
-	Tenant    string    \`json:"tenant,omitempty"\`
-	KeyID     string    \`json:"key_id,omitempty"\`
-	Decision  string    \`json:"decision"\`
-	LatencyMs int64     \`json:"latency_ms,omitempty"\`
-	Details   string    \`json:"details,omitempty"\`
-	PrevHash  string    \`json:"prev_hash,omitempty"\`
-	Hash      string    \`json:"hash"\`
+	ID        string    `json:"id"`
+	Time      time.Time `json:"time"`
+	Method    string    `json:"method,omitempty"`
+	Type      string    `json:"type"`
+	Endpoint  string    `json:"endpoint"`
+	Tenant    string    `json:"tenant,omitempty"`
+	KeyID     string    `json:"key_id,omitempty"`
+	Decision  string    `json:"decision"`
+	LatencyMs int64     `json:"latency_ms,omitempty"`
+	Details   string    `json:"details,omitempty"`
+	PrevHash  string    `json:"prev_hash,omitempty"`
+	Hash      string    `json:"hash"`
 }
 
 type Log struct {
