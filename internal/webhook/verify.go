@@ -1,0 +1,4 @@
+package webhook
+
+import("crypto/hmac";"crypto/sha256";"encoding/hex";"fmt";"net/http";"strconv";"strings";"time")
+func Verify(r *http.Request,body []byte,secret string,tolerance time.Duration)error{if secret==""{return fmt.Errorf("webhook secret not configured")};parts:=map[string]string{};for _,p:=range strings.Split(r.Header.Get("X-Signature"),","){kv:=strings.SplitN(strings.TrimSpace(p),"=",2);if len(kv)==2{parts[kv[0]]=kv[1]}};ts,err:=strconv.ParseInt(parts["t"],10,64);if err!=nil{return fmt.Errorf("invalid webhook timestamp")};if time.Since(time.Unix(ts,0)).Abs()>tolerance{return fmt.Errorf("webhook timestamp outside tolerance")};mac:=hmac.New(sha256.New,[]byte(secret));_,_=mac.Write([]byte(parts["t"]+"."+string(body)));expected:=hex.EncodeToString(mac.Sum(nil));if !hmac.Equal([]byte(expected),[]byte(parts["v1"])){return fmt.Errorf("invalid webhook signature")};return nil}
