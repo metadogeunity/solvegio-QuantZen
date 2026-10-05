@@ -396,7 +396,7 @@ func (a *App) verifyRequest(tenant string, h http.Header, body []byte, method, p
 		return "401", "BLOCK", "INVALID_SIGNATURE"
 	}
 
-	claimed, err := a.replay.Claim(r.Context(), "qz:"+tenant+":"+env.Nonce, 5*time.Minute)
+	claimed, err := a.replay.Claim(context.Background(), "qz:"+tenant+":"+env.Nonce, 5*time.Minute)
 	if err != nil || !claimed {
 		a.replays.Add(1)
 		return "409", "BLOCK", "REPLAY_DETECTED"
