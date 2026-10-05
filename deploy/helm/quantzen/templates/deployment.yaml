@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "quantzen.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "quantzen.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "quantzen.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: gateway
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: SOLVEGIO_BASE_URL
+              value: {{ .Values.env.solvegioBaseURL | quote }}
+            - name: SOLVEGIO_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "quantzen.fullname" . }}
+                  key: solvegio-api-key
+                  optional: true
+            - name: WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "quantzen.fullname" . }}
+                  key: webhook-secret
+                  optional: true
+            - name: REDIS_URL
+              value: {{ .Values.env.redisURL | quote }}
+            - name: DATABASE_URL
+              value: {{ .Values.env.databaseURL | quote }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
