@@ -7,6 +7,17 @@
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+<div id="auth-gate" class="auth-gate">
+  <form id="login-form" class="login-card">
+    <img src="/assets/quantzen-logo.svg" alt="QuantZen">
+    <h1>QuantZen™</h1>
+    <p>Administrator sign-in required.</p>
+    <label>Username<input id="login-username" name="username" autocomplete="username" required></label>
+    <label>Password<input id="login-password" name="password" type="password" autocomplete="current-password" required></label>
+    <button class="login-button" type="submit">Sign in</button>
+    <div id="login-error" class="login-error" role="alert"></div>
+  </form>
+</div>
 <aside class="sidebar">
   <div class="brand">
     <img src="/assets/quantzen-logo.svg" alt="QuantZen">
@@ -50,6 +61,7 @@
     </div>
     <div class="avatar" aria-hidden="true">A</div>
     <b>Admin</b>
+    <button id="logout" class="logout-button" type="button">Sign out</button>
   </header>
 
   <section id="metrics" class="metrics" aria-live="polite"></section>
