@@ -39,6 +39,7 @@ type App struct {
 	trust    *trust.Registry
 	keys     *qzcrypto.KeyStore
 	replay   replay.Store
+	replayReady bool
 	solvegio *solvegio.Client
 	db       *store.Store
 
@@ -74,10 +75,16 @@ func main() {
 	})
 
 	var replayStore replay.Store = replay.NewMemory()
+	replayReady := true
 	if cfg.RedisURL != "" {
-		if r, e := replay.NewRedis(cfg.RedisURL); e == nil && r.Ping(context.Background()) == nil {
-			replayStore = r
+		r, err := replay.NewRedis(cfg.RedisURL)
+		if err != nil {
+			log.Fatalf("invalid REDIS_URL: %v", err)
 		}
+		if err := r.Ping(context.Background()); err != nil {
+			log.Fatalf("redis is configured but unavailable: %v", err)
+		}
+		replayStore = r
 	}
 
 	db, err := store.New(context.Background(), cfg.DatabaseURL)
@@ -93,6 +100,7 @@ func main() {
 		trust:    reg,
 		keys:     qzcrypto.NewKeyStore(id),
 		replay:   replayStore,
+		replayReady: replayReady,
 		solvegio: solvegio.New(cfg.SolveGioBaseURL, cfg.SolveGioAPIKey, cfg.SolveGioTimeout),
 		db:       db,
 	}
@@ -157,7 +165,7 @@ func (a *App) persistEvent(ctx context.Context, e audit.Event) {
 }
 
 func (a *App) ready(w http.ResponseWriter, _ *http.Request) {
-	if !a.auth.Configured() {
+	if !a.auth.Configured() || !a.replayReady {
 		httpx.JSON(w, http.StatusServiceUnavailable, map[string]any{"status": "not_ready", "reason": "dashboard authentication is not configured"})
 		return
 	}
