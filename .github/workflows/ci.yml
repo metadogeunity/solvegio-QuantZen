@@ -20,3 +20,9 @@ jobs:
       - run: git diff -- go.mod go.sum
       - run: go test ./...
       - run: go vet ./...
+      - name: Go vulnerability scan
+        uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1.1.0
+        with:
+          go-version-input: "1.26.8"
+          go-package: ./...
+          repo-checkout: false
