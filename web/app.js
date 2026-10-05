@@ -254,6 +254,10 @@ async function load() {
       ? "No audit events recorded yet."
       : auditCount.toLocaleString() + " recent audit event(s) loaded from the gateway runtime and persistent audit store.";
   } catch (error) {
+    if (String(error.message).indexOf("401") !== -1) {
+      setAuthenticated(false);
+      return;
+    }
     document.querySelector("#conn").textContent = "Gateway unavailable";
     document.querySelector("#connection-subtitle").textContent = error.message;
     console.error(error);
