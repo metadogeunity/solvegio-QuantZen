@@ -6,3 +6,5 @@ github.com/redis/go-redis/v9 v9.22.0 h1:laDvpYXTJtZLloinw1fA5Kqd6HAEH2XKxOkG/PDq
 github.com/redis/go-redis/v9 v9.22.0/go.mod h1:y2g0Wj8rQvuK0ELM+oxSudcLtC09JScs98I/X9gRWY4=
 github.com/trailofbits/ml-dsa v0.1.0 h1:JPWCy8jlhYtFq2AnnqSTgiHfrTVxvit4kd2McJA/2Pg=
 github.com/trailofbits/ml-dsa v0.1.0/go.mod h1:FcKELhrU8AdbkZ0eo+5ikB2e+A70nq/jzq2eXPjeAAg=
+golang.org/x/text v0.39.0 h1:UbZz4pLOvn600D6Oh6GGEI6VAmndrEBLv8/6BEXzyus=
+golang.org/x/text v0.39.0/go.mod h1:3UwRclnC2g0TU9x8PZiyfOajCd1zaUNHF9cvqcQZ+ZM=
