@@ -10,5 +10,8 @@ env:
   solvegioBaseURL: ""
   solvegioAPIKey: ""
   webhookSecret: ""
+  dashboardUsername: "admin"
+  dashboardPassword: ""
+  dashboardSessionSecret: ""
   redisURL: redis://quantzen-redis:6379/0
   databaseURL: ""
