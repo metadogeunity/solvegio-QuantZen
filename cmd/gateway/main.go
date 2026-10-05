@@ -75,7 +75,7 @@ func main() {
 	})
 
 	var replayStore replay.Store = replay.NewMemory()
-	replayReady := true
+	replayReady := cfg.AllowMemoryReplay
 	if cfg.RedisURL != "" {
 		r, err := replay.NewRedis(cfg.RedisURL)
 		if err != nil {
@@ -85,6 +85,7 @@ func main() {
 			log.Fatalf("redis is configured but unavailable: %v", err)
 		}
 		replayStore = r
+		replayReady = true
 	}
 
 	db, err := store.New(context.Background(), cfg.DatabaseURL)
@@ -359,6 +360,9 @@ func (a *App) signDemo(method, p string, body []byte) map[string]string {
 }
 
 func (a *App) verifyRequest(tenant string, h http.Header, body []byte, method, p string) (string, string, string) {
+	if !a.replayReady {
+		return "503", "BLOCK", "REPLAY_PROTECTION_UNAVAILABLE"
+	}
 	if tenant == "" || len(tenant) > 128 {
 		return "400", "BLOCK", "INVALID_TENANT"
 	}
@@ -610,6 +614,10 @@ func (a *App) simulator(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) solvegioWebhook(w http.ResponseWriter, r *http.Request) {
+	if !a.replayReady {
+		httpx.Error(w, http.StatusServiceUnavailable, "replay protection unavailable")
+		return
+	}
 	body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
 	if err != nil {
 		httpx.Error(w, http.StatusBadRequest, "read error")
