@@ -1,23 +1,158 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QuantZen™ Operator Security Console</title><link rel="stylesheet" href="/styles.css"></head>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QuantZen™ Operator Security Console</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
 <body>
 <aside class="sidebar">
-  <div class="brand"><img src="/assets/quantzen-logo.svg" alt="QuantZen"><div><strong>QuantZen™</strong><span>Security Gateway</span><span>for SolveGio</span></div></div>
-  <nav><button class="nav active">Overview</button><button class="nav">API Traffic</button><button class="nav">Security Events</button><button class="nav">Trust Registry</button><button class="nav">Audit Log</button><button class="nav">SolveGio</button><button class="nav">Simulator</button><button class="nav">Settings</button></nav>
-  <div class="env"><span>Environment</span><b>● SANDBOX</b><small>v0.1.0 MVP</small></div>
+  <div class="brand">
+    <img src="/assets/quantzen-logo.svg" alt="QuantZen">
+    <div>
+      <strong>QuantZen™</strong>
+      <span>Security Gateway</span>
+      <span>for SolveGio</span>
+    </div>
+  </div>
+
+  <nav aria-label="Console sections">
+    <button class="nav active" data-target="overview">Overview</button>
+    <button class="nav" data-target="api-traffic">API Traffic</button>
+    <button class="nav" data-target="security-events">Security Events</button>
+    <button class="nav" data-target="trust-registry">Trust Registry</button>
+    <button class="nav" data-target="audit-log">Audit Log</button>
+    <button class="nav" data-target="solvegio-status">SolveGio</button>
+    <button class="nav" data-target="simulator">Simulator</button>
+  </nav>
+
+  <div class="env">
+    <span>Environment</span>
+    <b id="sidebar-environment">NOT CONFIGURED</b>
+    <small>Live backend state</small>
+  </div>
 </aside>
+
 <main>
-<header class="topbar"><div><h1>Operator Security Console</h1><p>Protecting SolveGio API with Post-Quantum Security</p></div><div class="connection"><b>● <span id="conn">SolveGio Demo</span></b><small>Sandbox Environment</small></div><div class="last">Last Event<br><b id="lastEvent">—</b></div><div class="avatar">A</div><b>Admin⌄</b></header>
-<section id="metrics" class="metrics"></section>
-<section class="grid charts">
-<article class="card wide"><h2>Request Activity <small>Last 24 Hours</small></h2><canvas id="chart" height="190"></canvas></article>
-<article class="card"><h2>Endpoint Distribution</h2><div class="donut"><span>12,482<small>Requests</small></span></div><div class="endpoint-list"><div><i class="c1"></i>/v1/products <b>28%</b></div><div><i class="c2"></i>/v1/payments <b>24%</b></div><div><i class="c3"></i>/v1/subscriptions <b>18%</b></div><div><i class="c4"></i>/v1/webhooks <b>15%</b></div><div><i class="c5"></i>/v1/destinations <b>10%</b></div></div></article>
-<article class="card"><h2>SolveGio Status</h2><div class="kv">Environment <b id="env">DEMO</b></div><div class="kv">API Connection <b>●</b></div><div class="kv">Webhook Status <b>●</b></div><div class="kv">Last Event <b id="statusEvent">—</b></div><div class="kv">API Key <b>●</b></div></article>
-</section>
-<section class="grid tables"><article class="card"><h2>API Traffic <a href="#">View All →</a></h2><table id="traffic"><thead><tr><th>Time</th><th>Method</th><th>Endpoint</th><th>Tenant</th><th>Key ID</th><th>Signature</th><th>Latency</th><th>Decision</th></tr></thead><tbody></tbody></table></article>
-<article class="card"><h2>Security Events <a href="#">View All →</a></h2><table id="events"><thead><tr><th>Time</th><th>Event</th><th>Details</th><th>Severity</th></tr></thead><tbody></tbody></table></article></section>
-<section class="grid bottom"><article class="card"><h2>Trust Registry / Keys <button class="primary">＋ Add Key</button></h2><table><thead><tr><th>Issuer</th><th>Key ID</th><th>Algorithm</th><th>Status</th><th>Fingerprint</th><th>Validity</th><th>Actions</th></tr></thead><tbody id="trust"></tbody></table></article>
-<article class="card simulator"><h2>Simulator</h2><p>Test the gateway against the core security scenarios.</p><div id="sim"></div></article></section>
+  <header class="topbar">
+    <div>
+      <h1 id="overview">Operator Security Console</h1>
+      <p>Live security telemetry for the QuantZen™ gateway protecting SolveGio.</p>
+    </div>
+    <div class="connection">
+      <b>● <span id="conn">Checking gateway…</span></b>
+      <small id="connection-subtitle">Loading live backend state</small>
+    </div>
+    <div class="last">
+      Last Event<br>
+      <b id="lastEvent">Never</b>
+    </div>
+    <div class="avatar" aria-hidden="true">A</div>
+    <b>Admin</b>
+  </header>
+
+  <section id="metrics" class="metrics" aria-live="polite"></section>
+
+  <section class="grid charts">
+    <article class="card wide" id="request-activity">
+      <h2>Request Activity <small>Last 24 Hours</small></h2>
+      <div class="chart-wrap">
+        <canvas id="chart" height="190"></canvas>
+        <div id="chart-empty" class="chart-empty">No live API activity yet.</div>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>Endpoint Distribution</h2>
+      <div id="donut" class="donut">
+        <span>
+          <strong id="donut-value">0</strong>
+          <small id="donut-label">Live requests</small>
+        </span>
+      </div>
+      <div id="endpoint-list" class="endpoint-list">
+        <div class="empty-panel">No endpoint traffic yet.</div>
+      </div>
+    </article>
+
+    <article class="card" id="solvegio-status">
+      <h2>SolveGio Status</h2>
+      <div class="kv">Environment <b id="env">NOT CONFIGURED</b></div>
+      <div class="kv">API Connection <b id="api-status">Checking…</b></div>
+      <div class="kv">Webhook Status <b id="webhook-status">Checking…</b></div>
+      <div class="kv">Last Event <b id="statusEvent">Never</b></div>
+      <div class="kv">API Key <b id="api-key-status">Checking…</b></div>
+    </article>
+  </section>
+
+  <section class="grid tables">
+    <article class="card" id="api-traffic">
+      <h2>API Traffic <a href="#api-traffic">Live View</a></h2>
+      <table id="traffic">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Tenant</th>
+            <th>Key ID</th>
+            <th>Signature</th>
+            <th>Latency</th>
+            <th>Decision</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </article>
+
+    <article class="card" id="security-events">
+      <h2>Security Events <a href="#security-events">Live View</a></h2>
+      <table id="events">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Event</th>
+            <th>Details</th>
+            <th>Severity</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </article>
+  </section>
+
+  <section class="grid bottom">
+    <article class="card" id="trust-registry">
+      <h2>Trust Registry / Keys</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Issuer</th>
+            <th>Key ID</th>
+            <th>Algorithm</th>
+            <th>Status</th>
+            <th>Fingerprint</th>
+            <th>Validity</th>
+            <th>Mode</th>
+          </tr>
+        </thead>
+        <tbody id="trust"></tbody>
+      </table>
+    </article>
+
+    <article class="card simulator" id="simulator">
+      <h2>Simulator</h2>
+      <p>Run controlled security scenarios against the live gateway. Results are written to the audit stream.</p>
+      <div id="sim"></div>
+    </article>
+  </section>
+
+  <section class="card audit-panel" id="audit-log">
+    <h2>Audit Log <small>Latest 50 events</small></h2>
+    <div id="audit-summary" class="audit-summary">Events will appear here as the gateway processes requests.</div>
+  </section>
 </main>
-<script src="/app.js"></script></body></html>
+<script src="/app.js"></script>
+</body>
+</html>
