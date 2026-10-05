@@ -7,4 +7,5 @@ require (
 	github.com/redis/go-redis/v9 v9.22.0
 	github.com/trailofbits/ml-dsa v0.1.0
 	github.com/cyberphone/json-canonicalization v0.0.0-20241213102144-19d51d7fe467
+	golang.org/x/text v0.39.0
 )
