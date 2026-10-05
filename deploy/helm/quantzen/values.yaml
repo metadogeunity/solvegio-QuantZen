@@ -1,0 +1,14 @@
+replicaCount: 1
+image:
+  repository: quantzen/solvegio-gateway
+  tag: mvp
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 8080
+env:
+  solvegioBaseURL: ""
+  solvegioAPIKey: ""
+  webhookSecret: ""
+  redisURL: redis://quantzen-redis:6379/0
+  databaseURL: ""
