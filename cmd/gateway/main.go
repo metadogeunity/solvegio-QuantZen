@@ -331,7 +331,7 @@ func (a *App) signDemo(method, p string, body []byte) map[string]string {
 	_, _ = rand.Read(nonceBytes)
 	nonce := base64.RawURLEncoding.EncodeToString(nonceBytes)
 	digest := protocol.Digest(canon)
-	msg := protocol.SigningString(method, p, timestamp, nonce, digest)
+	msg := protocol.SigningString("partner-demo", method, p, timestamp, nonce, digest)
 
 	id, _ := a.keys.Get("qz-key-001")
 	ed, pq, err := qzcrypto.Sign(id, []byte(msg))
@@ -351,6 +351,9 @@ func (a *App) signDemo(method, p string, body []byte) map[string]string {
 }
 
 func (a *App) verifyRequest(tenant string, h http.Header, body []byte, method, p string) (string, string, string) {
+	if tenant == "" || len(tenant) > 128 {
+		return "400", "BLOCK", "INVALID_TENANT"
+	}
 	env, err := protocol.FromHeaders(h)
 	if err != nil {
 		return "400", "BLOCK", "INVALID_SIGNATURE"
@@ -386,14 +389,14 @@ func (a *App) verifyRequest(tenant string, h http.Header, body []byte, method, p
 		return "401", "BLOCK", "KEY_OUTSIDE_VALIDITY"
 	}
 
-	msg := protocol.SigningString(method, p, fmt.Sprint(env.Timestamp), env.Nonce, env.ContentDigest)
+	msg := protocol.SigningString(tenant, method, p, fmt.Sprint(env.Timestamp), env.Nonce, env.ContentDigest)
 	edOK, pqOK, err := qzcrypto.Verify(key.EdPublic, key.PQPublic, []byte(msg), env.Ed25519Signature, env.MLDSASignature)
 	if err != nil || !edOK || !pqOK {
 		a.invalid.Add(1)
 		return "401", "BLOCK", "INVALID_SIGNATURE"
 	}
 
-	claimed, err := a.replay.Claim(context.Background(), "qz:"+tenant+":"+env.Nonce, 5*time.Minute)
+	claimed, err := a.replay.Claim(r.Context(), "qz:"+tenant+":"+env.Nonce, 5*time.Minute)
 	if err != nil || !claimed {
 		a.replays.Add(1)
 		return "409", "BLOCK", "REPLAY_DETECTED"
