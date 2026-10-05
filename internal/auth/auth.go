@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -21,6 +22,13 @@ type Manager struct {
 	password string
 	secret   []byte
 	ttl      time.Duration
+	mu       sync.Mutex
+	failed   map[string]loginWindow
+}
+
+type loginWindow struct {
+	started time.Time
+	count   int
 }
 
 func New(username, password, secret string, ttl time.Duration) *Manager {
@@ -29,6 +37,7 @@ func New(username, password, secret string, ttl time.Duration) *Manager {
 		password: password,
 		secret:   []byte(secret),
 		ttl:      ttl,
+		failed:   make(map[string]loginWindow),
 	}
 }
 
@@ -75,7 +84,11 @@ func (m *Manager) Authenticate(r *http.Request) bool {
 }
 
 func (m *Manager) Login(w http.ResponseWriter, r *http.Request, username, password string) bool {
-	if !m.Configured() || !secureEqual(username, m.username) || !secureEqual(password, m.password) {
+	if !m.Configured() || !m.allowLogin(username) {
+		return false
+	}
+	if !secureEqual(username, m.username) || !secureEqual(password, m.password) {
+		m.recordFailure(username)
 		return false
 	}
 
@@ -94,24 +107,42 @@ func (m *Manager) Login(w http.ResponseWriter, r *http.Request, username, passwo
 
 	secure := strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https") || r.TLS != nil
 	http.SetCookie(w, &http.Cookie{
-		Name:     SessionCookie,
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   secure,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   int(m.ttl.Seconds()),
+		Name: SessionCookie, Value: token, Path: "/", HttpOnly: true,
+		Secure: secure, SameSite: http.SameSiteLaxMode, MaxAge: int(m.ttl.Seconds()),
 	})
 	http.SetCookie(w, &http.Cookie{
-		Name:     CSRFCookie,
-		Value:    csrf,
-		Path:     "/",
-		HttpOnly: false,
-		Secure:   secure,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   int(m.ttl.Seconds()),
+		Name: CSRFCookie, Value: csrf, Path: "/", HttpOnly: false,
+		Secure: secure, SameSite: http.SameSiteLaxMode, MaxAge: int(m.ttl.Seconds()),
 	})
+
+	m.mu.Lock()
+	delete(m.failed, username)
+	m.mu.Unlock()
 	return true
+}
+
+func (m *Manager) allowLogin(username string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	window, ok := m.failed[username]
+	if !ok || time.Since(window.started) >= time.Minute {
+		return true
+	}
+	return window.count < 10
+}
+
+func (m *Manager) recordFailure(username string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	window, ok := m.failed[username]
+	if !ok || time.Since(window.started) >= time.Minute {
+		m.failed[username] = loginWindow{started: time.Now(), count: 1}
+		return
+	}
+	window.count++
+	m.failed[username] = window
 }
 
 func (m *Manager) Logout(w http.ResponseWriter, r *http.Request) {
@@ -119,8 +150,7 @@ func (m *Manager) Logout(w http.ResponseWriter, r *http.Request) {
 	for _, name := range []string{SessionCookie, CSRFCookie} {
 		http.SetCookie(w, &http.Cookie{
 			Name: name, Value: "", Path: "/", MaxAge: -1,
-			HttpOnly: name == SessionCookie,
-			Secure: secure, SameSite: http.SameSiteLaxMode,
+			HttpOnly: name == SessionCookie, Secure: secure, SameSite: http.SameSiteLaxMode,
 		})
 	}
 }
