@@ -125,7 +125,11 @@ func (m *Manager) allowLogin(username string) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	window, ok := m.failed[username]
+	key := username
+	if key != m.username {
+		key = "_unknown_"
+	}
+	window, ok := m.failed[key]
 	if !ok || time.Since(window.started) >= time.Minute {
 		return true
 	}
@@ -136,13 +140,17 @@ func (m *Manager) recordFailure(username string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	window, ok := m.failed[username]
+	key := username
+	if key != m.username {
+		key = "_unknown_"
+	}
+	window, ok := m.failed[key]
 	if !ok || time.Since(window.started) >= time.Minute {
-		m.failed[username] = loginWindow{started: time.Now(), count: 1}
+		m.failed[key] = loginWindow{started: time.Now(), count: 1}
 		return
 	}
 	window.count++
-	m.failed[username] = window
+	m.failed[key] = window
 }
 
 func (m *Manager) Logout(w http.ResponseWriter, r *http.Request) {
