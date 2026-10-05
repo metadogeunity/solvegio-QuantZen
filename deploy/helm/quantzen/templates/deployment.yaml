@@ -37,6 +37,20 @@ spec:
                   name: {{ include "quantzen.fullname" . }}
                   key: webhook-secret
                   optional: true
+            - name: DASHBOARD_USERNAME
+              value: {{ .Values.env.dashboardUsername | quote }}
+            - name: DASHBOARD_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "quantzen.fullname" . }}
+                  key: dashboard-password
+                  optional: false
+            - name: DASHBOARD_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "quantzen.fullname" . }}
+                  key: dashboard-session-secret
+                  optional: false
             - name: REDIS_URL
               value: {{ .Values.env.redisURL | quote }}
             - name: DATABASE_URL
