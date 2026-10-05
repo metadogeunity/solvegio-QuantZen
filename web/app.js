@@ -38,6 +38,28 @@ function escapeHTML(value) {
     .replaceAll("'", "&#039;");
 }
 
+function getCookie(name) {
+  const prefix = name + "=";
+  const value = document.cookie.split("; ").find(function (item) { return item.indexOf(prefix) === 0; });
+  return value ? decodeURIComponent(value.slice(prefix.length)) : "";
+}
+
+function setAuthenticated(visible) {
+  document.querySelector("#auth-gate").style.display = visible ? "none" : "grid";
+  document.body.classList.toggle("locked", !visible);
+}
+
+async function checkSession() {
+  try {
+    const session = await getJSON("/api/auth/session");
+    setAuthenticated(Boolean(session.authenticated));
+    return Boolean(session.authenticated);
+  } catch (error) {
+    setAuthenticated(false);
+    return false;
+  }
+}
+
 function metrics(data) {
   document.querySelector("#metrics").innerHTML = metricSpec.map(function (m, i) {
     return '<div class="metric">' +
@@ -255,7 +277,7 @@ function simulator() {
       try {
         const result = await getJSON("/api/simulator", {
           method: "POST",
-          headers: {"Content-Type": "application/json"},
+          headers: {"Content-Type": "application/json", "X-QZ-CSRF": getCookie("qz_csrf")},
           body: JSON.stringify({Scenario: button.dataset.s})
         });
         button.querySelector("span").textContent = result.decision + " · " + result.details;
@@ -281,8 +303,56 @@ function navigation() {
   });
 }
 
-simulator();
-navigation();
-load();
-setInterval(load, 8000);
-window.addEventListener("resize", load);
+document.querySelector("#login-form").addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const errorBox = document.querySelector("#login-error");
+  const button = event.target.querySelector("button[type=submit]");
+  errorBox.textContent = "";
+  button.disabled = true;
+
+  try {
+    await getJSON("/api/auth/login", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        username: document.querySelector("#login-username").value,
+        password: document.querySelector("#login-password").value
+      })
+    });
+    document.querySelector("#login-password").value = "";
+    setAuthenticated(true);
+    await load();
+  } catch (error) {
+    errorBox.textContent = "Sign-in failed. Check your credentials.";
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.querySelector("#logout").addEventListener("click", async function () {
+  try {
+    await getJSON("/api/auth/logout", {
+      method: "POST",
+      headers: {"X-QZ-CSRF": getCookie("qz_csrf")}
+    });
+  } finally {
+    setAuthenticated(false);
+  }
+});
+
+async function boot() {
+  simulator();
+  navigation();
+  const authenticated = await checkSession();
+  if (!authenticated) {
+    return;
+  }
+  await load();
+  setInterval(load, 8000);
+}
+
+boot();
+window.addEventListener("resize", function () {
+  if (document.body.classList.contains("locked")) return;
+  load();
+});
