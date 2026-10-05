@@ -157,43 +157,61 @@ func (a *App) dashboard(w http.ResponseWriter, r *http.Request) {
 	events := a.recentEvents(r.Context())
 	now := time.Now().UTC()
 
+	var protected, verified, blocked, replays, invalid, unknown, webhookEvents int
 	endpointCounts := make(map[string]int)
 	activity := make([]int, 24)
+
 	for _, e := range events {
-		if !strings.HasPrefix(e.Endpoint, "/v1/") {
-			continue
-		}
-		endpointCounts[e.Endpoint]++
-		age := now.Sub(e.Time)
-		if age >= 0 && age < 24*time.Hour {
-			index := 23 - int(age/time.Hour)
-			if index >= 0 && index < len(activity) {
-				activity[index]++
+		if strings.HasPrefix(e.Endpoint, "/v1/") {
+			protected++
+			endpointCounts[e.Endpoint]++
+			if e.Decision == "ALLOW" {
+				verified++
+			} else if e.Decision == "BLOCK" {
+				blocked++
+			}
+			switch e.Type {
+			case "REPLAY_DETECTED":
+				replays++
+			case "INVALID_SIGNATURE":
+				invalid++
+			case "UNKNOWN_KEY":
+				unknown++
+			}
+
+			age := now.Sub(e.Time)
+			if age >= 0 && age < 24*time.Hour {
+				index := 23 - int(age/time.Hour)
+				if index >= 0 && index < len(activity) {
+					activity[index]++
+				}
 			}
 		}
+
+		if e.Endpoint == "/webhooks/solvegio" {
+			webhookEvents++
+		}
 	}
 
-	type endpointStat struct {
-		Endpoint string `json:"endpoint"`
-		Count    int    `json:"count"`
-	}
-
-	endpointStats := make([]endpointStat, 0, len(endpointCounts))
+	endpointStats := make([]map[string]any, 0, len(endpointCounts))
 	for endpoint, count := range endpointCounts {
-		endpointStats = append(endpointStats, endpointStat{Endpoint: endpoint, Count: count})
+		endpointStats = append(endpointStats, map[string]any{
+			"endpoint": endpoint,
+			"count":    count,
+		})
 	}
 	sort.Slice(endpointStats, func(i, j int) bool {
-		return endpointStats[i].Count > endpointStats[j].Count
+		return endpointStats[i]["count"].(int) > endpointStats[j]["count"].(int)
 	})
 
 	httpx.JSON(w, http.StatusOK, map[string]any{
-		"protected_requests":    a.requests.Load(),
-		"verified":              a.verified.Load(),
-		"blocked":               a.blocked.Load(),
-		"replay_attacks":        a.replays.Load(),
-		"invalid_signatures":    a.invalid.Load(),
-		"unknown_keys":          a.unknown.Load(),
-		"webhook_events":        a.webhooks.Load(),
+		"protected_requests":    protected,
+		"verified":              verified,
+		"blocked":               blocked,
+		"replay_attacks":        replays,
+		"invalid_signatures":    invalid,
+		"unknown_keys":          unknown,
+		"webhook_events":        webhookEvents,
 		"endpoint_distribution": endpointStats,
 		"activity":              activity,
 		"events":                events,
