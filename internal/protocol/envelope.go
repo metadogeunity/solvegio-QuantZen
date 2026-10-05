@@ -9,16 +9,16 @@ import (
 	"strings"
 )
 
-const Version = "QZ-HYBRID-1"
+const Version = "QZ-HYBRID-2"
 
 func Digest(body []byte) string {
 	sum := sha256.Sum256(body)
 	return base64.RawURLEncoding.EncodeToString(sum[:])
 }
 
-func SigningString(method, p, timestamp, nonce, digest string) string {
+func SigningString(tenant, method, p, timestamp, nonce, digest string) string {
 	return strings.Join(
-		[]string{Version, strings.ToUpper(method), p, timestamp, nonce, "sha256=" + digest},
+		[]string{Version, tenant, strings.ToUpper(method), p, timestamp, nonce, "sha256=" + digest},
 		"\n",
 	)
 }
@@ -39,6 +39,10 @@ func FromHeaders(h http.Header) (Envelope, error) {
 	if err != nil {
 		return Envelope{}, fmt.Errorf("invalid timestamp")
 	}
+	if len(v) > 32 || len(h.Get("X-QZ-Key-Id")) > 128 || len(h.Get("X-QZ-Nonce")) > 256 || len(h.Get("X-QZ-Content-Digest")) > 128 || len(h.Get("X-QZ-Signature-Ed25519")) > 256 || len(h.Get("X-QZ-Signature-MLDSA65")) > 8192 {
+		return Envelope{}, fmt.Errorf("QuantZen signature header too large")
+	}
+
 	e := Envelope{
 		Version:          v,
 		KeyID:            h.Get("X-QZ-Key-Id"),
