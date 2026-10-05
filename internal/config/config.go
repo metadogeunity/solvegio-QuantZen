@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 	"strconv"
 	"time"
 )
@@ -34,7 +35,8 @@ func Load() Config {
 		DashboardUsername:      os.Getenv("DASHBOARD_USERNAME"),
 		DashboardPassword:      os.Getenv("DASHBOARD_PASSWORD"),
 		DashboardSessionSecret: os.Getenv("DASHBOARD_SESSION_SECRET"),
-		DashboardSessionTTL:    time.Duration(envInt("DASHBOARD_SESSION_TTL_SECONDS", 28800)) * time.Second,
+		DashboardSessionTTL:      time.Duration(envInt("DASHBOARD_SESSION_TTL_SECONDS", 28800)) * time.Second,
+		AllowMemoryReplay:        envBool("QZ_ALLOW_MEMORY_REPLAY", false),
 	}
 }
 
@@ -43,6 +45,18 @@ func env(k, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func envBool(k string, fallback bool) bool {
+	v := strings.ToLower(os.Getenv(k))
+	if v == "" {
+		return fallback
+	}
+	parsed, err := strconv.ParseBool(v)
+	if err != nil {
+		return fallback
+	}
+	return parsed
 }
 
 func envInt(k string, fallback int) int {
