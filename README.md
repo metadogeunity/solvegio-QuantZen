@@ -30,3 +30,6 @@ Run locally:
 3. open http://localhost:8080
 
 PoC only. No claim of production certification, formal cryptographic audit, HSM-backed keys or full MVNE functionality.
+
+
+CI runs module tidy, formatting, tests, and vet checks.
