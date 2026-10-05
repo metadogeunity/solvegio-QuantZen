@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"github.com/metadogeunity/solvegio-QuantZen/internal/audit"
+	"github.com/metadogeunity/solvegio-QuantZen/internal/auth"
+	"github.com/metadogeunity/solvegio-QuantZen/internal/httpsecurity"
 	"github.com/metadogeunity/solvegio-QuantZen/internal/canonical"
 	"github.com/metadogeunity/solvegio-QuantZen/internal/config"
 	qzcrypto "github.com/metadogeunity/solvegio-QuantZen/internal/crypto"
@@ -32,6 +34,7 @@ import (
 
 type App struct {
 	cfg      config.Config
+	auth     *auth.Manager
 	audit    *audit.Log
 	trust    *trust.Registry
 	keys     *qzcrypto.KeyStore
@@ -85,6 +88,7 @@ func main() {
 
 	app := &App{
 		cfg:      cfg,
+		auth:     auth.New(cfg.DashboardUsername, cfg.DashboardPassword, cfg.DashboardSessionSecret, cfg.DashboardSessionTTL),
 		audit:    audit.New(),
 		trust:    reg,
 		keys:     qzcrypto.NewKeyStore(id),
@@ -95,20 +99,23 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", app.health)
-	mux.HandleFunc("/readyz", app.health)
-	mux.HandleFunc("/api/dashboard", app.dashboard)
-	mux.HandleFunc("/api/trust-registry", app.registry)
-	mux.HandleFunc("/api/audit-log", app.auditLog)
-	mux.HandleFunc("/api/solvegio", app.solvegioStatus)
-	mux.HandleFunc("/api/simulator", app.simulator)
-	mux.HandleFunc("/api/demo/identity", app.demoIdentity)
+	mux.HandleFunc("/readyz", app.ready)
+	mux.HandleFunc("/api/auth/login", app.login)
+	mux.Handle("/api/auth/session", app.requireAdmin(http.HandlerFunc(app.session)))
+	mux.Handle("/api/auth/logout", app.requireCSRF(http.HandlerFunc(app.logout)))
+	mux.Handle("/api/dashboard", app.requireAdmin(http.HandlerFunc(app.dashboard)))
+	mux.Handle("/api/trust-registry", app.requireAdmin(http.HandlerFunc(app.registry)))
+	mux.Handle("/api/audit-log", app.requireAdmin(http.HandlerFunc(app.auditLog)))
+	mux.Handle("/api/solvegio", app.requireAdmin(http.HandlerFunc(app.solvegioStatus)))
+	mux.Handle("/api/simulator", app.requireCSRF(http.HandlerFunc(app.simulator)))
+	mux.Handle("/api/demo/identity", app.requireAdmin(http.HandlerFunc(app.demoIdentity)))
 	mux.HandleFunc("/gateway/forward", app.forward)
 	mux.HandleFunc("/webhooks/solvegio", app.solvegioWebhook)
 	mux.Handle("/", http.FileServer(http.Dir("./web")))
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           mux,
+		Handler:           httpsecurity.Middleware(mux),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       20 * time.Second,
 		WriteTimeout:      20 * time.Second,
@@ -147,6 +154,67 @@ func (a *App) persistEvent(ctx context.Context, e audit.Event) {
 	if a.db != nil {
 		_ = a.db.Insert(ctx, e)
 	}
+}
+
+func (a *App) ready(w http.ResponseWriter, _ *http.Request) {
+	if !a.auth.Configured() {
+		httpx.JSON(w, http.StatusServiceUnavailable, map[string]any{"status": "not_ready", "reason": "dashboard authentication is not configured"})
+		return
+	}
+	httpx.JSON(w, http.StatusOK, map[string]any{"status": "ready"})
+}
+
+func (a *App) login(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httpx.Error(w, http.StatusMethodNotAllowed, "POST required")
+		return
+	}
+	var in struct {
+		Username string
+		Password string
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&in); err != nil {
+		httpx.Error(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	if !a.auth.Login(w, r, in.Username, in.Password) {
+		httpx.Error(w, http.StatusUnauthorized, "invalid credentials")
+		return
+	}
+	httpx.JSON(w, http.StatusOK, map[string]any{"authenticated": true})
+}
+
+func (a *App) session(w http.ResponseWriter, _ *http.Request) {
+	httpx.JSON(w, http.StatusOK, map[string]any{"authenticated": true})
+}
+
+func (a *App) logout(w http.ResponseWriter, r *http.Request) {
+	a.auth.Logout(w, r)
+	httpx.JSON(w, http.StatusOK, map[string]any{"authenticated": false})
+}
+
+func (a *App) requireAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !a.auth.Configured() || !a.auth.Authenticate(r) {
+			httpx.Error(w, http.StatusUnauthorized, "authentication required")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (a *App) requireCSRF(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !a.auth.Configured() || !a.auth.Authenticate(r) {
+			httpx.Error(w, http.StatusUnauthorized, "authentication required")
+			return
+		}
+		if r.Method == http.MethodPost && !a.auth.ValidateCSRF(r) {
+			httpx.Error(w, http.StatusForbidden, "CSRF validation failed")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (a *App) health(w http.ResponseWriter, _ *http.Request) {
