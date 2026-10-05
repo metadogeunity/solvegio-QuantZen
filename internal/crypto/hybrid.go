@@ -32,6 +32,7 @@ func Sign(id *Identity,msg []byte)(string,string,error){
 }
 
 func Verify(edPub ed25519.PublicKey,pqPub *mldsa65.PublicKey,msg []byte,edSig,pqSig string)(bool,bool,error){
+  if len(edSig) > 256 || len(pqSig) > 8192 { return false,false,fmt.Errorf("signature too large") }
   ed,err:=base64.RawURLEncoding.DecodeString(edSig);if err!=nil{return false,false,err}
   pq,err:=base64.RawURLEncoding.DecodeString(pqSig);if err!=nil{return false,false,err}
   return ed25519.Verify(edPub,msg,ed),pqPub.Verify(msg,pq),nil
