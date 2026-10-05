@@ -20,6 +20,7 @@ type Config struct {
 	DashboardPassword    string
 	DashboardSessionSecret string
 	DashboardSessionTTL  time.Duration
+	AllowMemoryReplay        bool
 }
 
 func Load() Config {
