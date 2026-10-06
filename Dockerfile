@@ -1,7 +1,7 @@
 FROM golang:1.25-alpine AS build
 WORKDIR /src
 RUN apk add --no-cache ca-certificates
-COPY go.mod ./
+COPY go.mod go.sum ./
 COPY . .
 RUN go mod download
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/quantzen-gateway ./cmd/gateway
