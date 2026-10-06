@@ -3,6 +3,7 @@ WORKDIR /src
 RUN apk add --no-cache ca-certificates
 COPY go.mod go.sum ./
 COPY . .
+RUN go mod tidy
 RUN go mod download
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/quantzen-gateway ./cmd/gateway
 
