@@ -255,12 +255,14 @@ main{width:100%;}
     align-items:center;
     gap:12px;
     min-height:52px;
-    position:sticky;
+    position:fixed;
     top:0;
-    z-index:450;
+    left:0;
+    right:0;
+    z-index:600;
     background:var(--bg);
     border-bottom:1px solid var(--line);
-    padding:8px 0;
+    padding:8px 10px;
   }
 
   .mobile-menu{
@@ -305,16 +307,20 @@ main{width:100%;}
     white-space:nowrap;
   }
 
+  main{
+    padding-top:60px;
+  }
+
   .sidebar{
     display:block;
     position:fixed;
     z-index:500;
     left:0;
-    top:0;
+    top:60px;
     bottom:0;
     width:min(290px,82vw);
-    height:100vh;
-    min-height:100vh;
+    height:auto;
+    min-height:calc(100vh - 60px);
     padding:14px 12px;
     border-right:1px solid var(--line);
     border-bottom:0;
@@ -340,7 +346,10 @@ main{width:100%;}
 
   .mobile-backdrop{
     position:fixed;
-    inset:0;
+    left:0;
+    right:0;
+    top:60px;
+    bottom:0;
     z-index:475;
     background:rgba(7,22,74,.30);
     backdrop-filter:blur(2px);
