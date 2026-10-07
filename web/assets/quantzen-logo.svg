@@ -1,1 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 384"><circle cx="192" cy="192" r="160" fill="#103b80" stroke="#12175a" stroke-width="14"/><path d="M74 72l82 82-44 44L30 116zM228 268l82 82-44 44-82-82z" fill="#fff"/><circle cx="192" cy="192" r="166" fill="none" stroke="#fff" stroke-width="34" stroke-dasharray="300 180" stroke-linecap="round" transform="rotate(-42 192 192)"/><g fill="#fff" font-family="monospace" font-size="13"><text x="92" y="150">010011010111</text><text x="92" y="168">110101001101</text><text x="92" y="186">001101110010</text><text x="92" y="204">101001011100</text><text x="92" y="222">011010110011</text></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 384" role="img" aria-labelledby="title desc">
+<title id="title">QuantZen logo</title>
+<desc id="desc">Blue circular QuantZen security logo with binary data pattern and white diagonal cut marks.</desc>
+<circle cx="192" cy="192" r="160" fill="#123d83" stroke="#12175a" stroke-width="14"/>
+<circle cx="192" cy="192" r="166" fill="none" stroke="#fff" stroke-width="34" stroke-dasharray="300 180" stroke-linecap="round" transform="rotate(-42 192 192)"/>
+<path d="M74 72l82 82-44 44L30 116z" fill="#fff"/>
+<path d="M228 268l82 82-44 44-82-82z" fill="#fff"/>
+<g fill="#fff" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11" letter-spacing="0">
+  <text x="82" y="139">00111101010000000000001101</text>
+  <text x="82" y="152">10010110010010010110100101</text>
+  <text x="86" y="165">01011001011010100011001011</text>
+  <text x="92" y="178">1100110101010110011001001</text>
+  <text x="101" y="191">001011100110010100110101</text>
+  <text x="111" y="204">101101011001001101001011</text>
+  <text x="118" y="217">01100111010011010011001</text>
+  <text x="126" y="230">1101010010110011010101</text>
+  <text x="135" y="243">001101110010100101101</text>
+  <text x="146" y="256">10100101110001101010</text>
+  <text x="157" y="269">011010110011101001</text>
+  <text x="168" y="282">1100100110101101</text>
+</g>
+</svg>
