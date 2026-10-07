@@ -18,7 +18,10 @@
     <div id="login-error" class="login-error" role="alert"></div>
   </form>
 </div>
-<aside class="sidebar">
+
+<div class="mobile-backdrop" id="mobile-backdrop" aria-hidden="true"></div>
+
+<aside class="sidebar" id="console-sidebar">
   <div class="brand">
     <img src="/assets/quantzen-logo.svg" alt="QuantZen">
     <div>
@@ -47,6 +50,15 @@
 
 <main>
   <header class="topbar">
+    <div class="mobile-controls">
+      <button id="sidebar-toggle" class="mobile-menu" type="button" aria-label="Open navigation" aria-controls="console-sidebar" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="mobile-brand" aria-label="QuantZen">
+        <img src="/assets/quantzen-logo.svg" alt="">
+        <strong>QuantZen™</strong>
+      </div>
+    </div>
     <div>
       <h1 id="overview">Operator Security Console</h1>
       <p>Live security telemetry for the QuantZen™ gateway protecting SolveGio.</p>
